@@ -519,7 +519,10 @@ int main(int argc, char *argv[])
                     int ind = (height-1-y)*width+x;
                     float depth_val = depth_arrayf[ind];
 
-                    depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*scale);
+                    if( depth_val * scale < 65535 )
+                        depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*scale);
+                    else
+                        depth_image[CVD::ImageRef(x,y)] = 65535;
                 }
             }
 
