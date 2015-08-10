@@ -55,10 +55,8 @@ LINK_LIBRARIES(
   -lGLU
   -lGL
   -lboost_system
-  -lpcl_search
   -lboost_filesystem
   -lboost_thread
-  -lboost_timer
 )
 
 

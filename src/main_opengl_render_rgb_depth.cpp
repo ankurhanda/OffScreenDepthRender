@@ -278,12 +278,15 @@ int main(int argc, char *argv[])
     pangolin::View& d_panel = pangolin::CreatePanel("ui")
             .SetBounds(1.0, 0.0, 0, pangolin::Attach::Pix(150));
 
-    /// This is the one I used for depth rendering....
 
+
+    /// This is the one I used for depth rendering....
     pangolin::OpenGlRenderState s_cam(
       ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
       ModelViewLookAt(3,3,3, 0,0,0, AxisNegZ)
     );
+
+
 
     /// Add named OpenGL viewport to window and provide 3D Handler
     pangolin::View& d_cam = pangolin::Display("cam")
@@ -376,7 +379,15 @@ int main(int argc, char *argv[])
     }
     SE3PoseFile.close();
 
-    int skip_frame = 5;
+    int skip_frame = 1;
+
+    ofstream model_file("3dmodel.obj");
+
+//    ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
+    float u0 = 320.0;
+    float v0 = 240.0;
+    float fx = 420.0;
+    float fy = 420.0;
 
     while(!pangolin::ShouldQuit())
     {
@@ -492,11 +503,11 @@ int main(int argc, char *argv[])
                 depth_arrayf[i] = 2.0 * near * far / (far + near - z_n * (far - near));
             }
 
-            float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
-            float min_depth = *std::min_element(depth_arrayf,depth_arrayf+width*height);
+//            float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
+//            float min_depth = *std::min_element(depth_arrayf,depth_arrayf+width*height);
 
-            std::cout<<"max_depth = " << max_depth << std::endl;
-            std::cout<<"min_depth = " << min_depth << std::endl;
+//            std::cout<<"max_depth = " << max_depth << std::endl;
+//            std::cout<<"min_depth = " << min_depth << std::endl;
 
     #pragma omp parallel for
             for(int y = 0; y < height; y++)
@@ -530,6 +541,25 @@ int main(int argc, char *argv[])
 
             ofile.close();
 
+            if( render_pose_count%20 == 0  )
+            {
+
+                for(int y = 0; y < height; y++)
+                {
+                    for(int x = 0; x < width; x++)
+                    {
+                        float depth = (float)depth_image[CVD::ImageRef(x,y)]/50.0f;
+
+                        TooN::Vector<4>p_w = T_wc * TooN::makeVector(depth*(x-u0)/fx,
+                                                                     depth*(y-v0)/fy,
+                                                                     depth,
+                                                                     1.0);
+
+                        model_file << "v " << p_w[0]<<" "<<p_w[1]<<" "<<p_w[2]<<std::endl;
+                    }
+                }
+            }
+
         }
 
         d_panel.Render();
@@ -538,6 +568,8 @@ int main(int argc, char *argv[])
         render_pose_count+=skip_frame;
 
     }
+
+    model_file.close();
 
 }
 
