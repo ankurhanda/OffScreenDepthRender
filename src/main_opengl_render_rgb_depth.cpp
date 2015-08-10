@@ -290,44 +290,6 @@ int main(int argc, char *argv[])
       .SetBounds(0.0, 1, Attach::Pix(UI_WIDTH), 1, -640.0f/480.0f)
       .SetHandler(new Handler3D(s_cam));
 
-
-//    /// Create vertex and colour buffer objects and register them with CUDA
-//    pangolin::GlBufferCudaPtr vertex_array_0(
-//        GlArrayBuffer, width * height * sizeof(float4),
-//        cudaGraphicsMapFlagsWriteDiscard, GL_STREAM_DRAW
-//    );
-
-//    pangolin::GlBufferCudaPtr colour_array_0(
-//        GlArrayBuffer, width * height * sizeof(uchar4),
-//        cudaGraphicsMapFlagsWriteDiscard, GL_STREAM_DRAW
-//    );
-
-
-//    /// Pixel Buffer Object for depth / gray image
-//    pangolin::GlBufferCudaPtr* pbo_float_0 = new pangolin::GlBufferCudaPtr(pangolin::GlPixelUnpackBuffer,
-//                                                               width*height*sizeof(float),
-//                                                               cudaGraphicsMapFlagsNone,
-//                                                               GL_STREAM_DRAW);
-
-//    /// Pixel Buffer Object for RGB image
-//    pangolin::GlBufferCudaPtr* pbo_float4_0 = new pangolin::GlBufferCudaPtr(pangolin::GlPixelUnpackBuffer,
-//                                                               width*height*sizeof(float4),
-//                                                               cudaGraphicsMapFlagsNone,
-//                                                               GL_STREAM_DRAW);
-
-
-//    /// Texture for RGB image
-//    pangolin::GlTexture* tex_show_char4_0   = new pangolin::GlTexture(width,
-//                                                                      height,
-//                                                                      GL_RGBA);
-
-//    /// Texture for depth image
-//    pangolin::GlTexture* tex_show_char_0   = new pangolin::GlTexture(width,
-//                                                                 height,
-//                                                                 GL_LUMINANCE);
-
-//    TooN::SE3<>T_move;
-
     std::cout<<"entering the while loop" << std::endl;
 
     OpenGlMatrix openglSE3Matrix;
@@ -414,64 +376,13 @@ int main(int argc, char *argv[])
     }
     SE3PoseFile.close();
 
-    std::cout<<"Trajectory file = " << trajectory_fileName << std::endl;
-    std::cout<<"poses2render.size() = " << poses2render.size() << std::endl;
-
-    TooN::Matrix<4>T = TooN::Data(  1,  0,  0,  0,
-                                    0,  1,  0,  0,
-                                    0,  0,  1,  0,
-                                    0,  0,  0,  1);
-
-
     int skip_frame = 5;
 
     while(!pangolin::ShouldQuit())
     {
-        static Var<float>tx("ui.tx",-1.232,0,5);
-        static Var<float>ty("ui.ty",1.268,0,5);
-        static Var<float>tz("ui.tz",0.5072,0,5);
-
-        static Var<float>rx("ui.rx",1.572,0,1);
-        static Var<float>ry("ui.ry",0,0,1);
-        static Var<float>rz("ui.rz",0,0,1);
-
-        static Var<float>txmax("ui.txmax", 1, 0, 2);
-        static Var<float>txmin("ui.txmin",-1,-2, 0);
-
-        static Var<float>tymax("ui.tymax",2,0,2);
-        static Var<float>tymin("ui.tymin",0,0,2);
-
-        static Var<float>tzmax("ui.tzmax",1,0,3);
-        static Var<float>tzmin("ui.tzmin",-1,0,3);
-
-        static Var<float>radius("ui.radius",1,1,10);
-
-        static Var<int>n_levels("ui.n_levels",11,1,100);
-        static Var<int>l_levels("ui.l_levels",1,0,10);
-
-        static Var<float> end_pt("ui.end_pt",0.1,0,10);
-        static Var<float> line_width("ui.line_width",2,0,100);
-        static Var<bool> do_inverse("ui.do_inverse",false);
-        static Var<bool> render_glReadPixels("ui.glReadPixels",false);
-
-        static Var<bool>hemi_plot("ui.hemi_plot",false);
-        static Var<bool>trans_plot("ui.trans_plot",false);
-
-        static Var<bool> try_next("ui.try_next",false);
-        static Var<bool> translate_object("ui.translate_object",false);
-
-        static Var<int>which_object("ui.which_object",0,0,shapes.size());
-
-        static Var<bool> displayAllMesh("ui.display_all_mesh",true);
-
         static Var<int>numposes2plot("ui.numposes2plot",0,0,100);
 
-        bool camera_moved = false;
-
-        //if ( render_glReadPixels )
         {
-//            render_glReadPixels = false;
-
             numposes2plot  = render_pose_count;
 
             if ( numposes2plot >= poses2render.size())
@@ -513,31 +424,6 @@ int main(int argc, char *argv[])
             numposes2plot = render_pose_count;
 
             d_cam.ActivateScissorAndClear(s_cam);
-
-            float projectionMatrix[16];
-            glGetFloatv(GL_PROJECTION_MATRIX, projectionMatrix);
-
-            for(int r = 0; r < 4; r++)
-            {
-                for(int c = 0; c < 4; c++)
-                {
-                    std::cout<<projectionMatrix[r*4+c]<<" ";
-                }
-                std::cout<<std::endl;
-            }
-
-
-            float modelviewMatrix[16];
-            glGetFloatv(GL_MODELVIEW_MATRIX, modelviewMatrix);
-            for(int c = 0; c < 4; c++)
-            {
-                for(int r = 0; r < 4; r++ )
-                {
-                    std::cout<<modelviewMatrix[r*4+c]<<" ";
-                }
-                std::cout<<std::endl;
-            }
-
 
             glEnable(GL_DEPTH_TEST);
 
@@ -607,10 +493,10 @@ int main(int argc, char *argv[])
             }
 
             float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
-//            float min_depth = *std::min_element(depth_arrayf,depth_arrayf+width*height);
+            float min_depth = *std::min_element(depth_arrayf,depth_arrayf+width*height);
 
-//            std::cout<<"max_depth = " << max_depth << std::endl;
-//            std::cout<<"min_depth = " << min_depth << std::endl;
+            std::cout<<"max_depth = " << max_depth << std::endl;
+            std::cout<<"min_depth = " << min_depth << std::endl;
 
     #pragma omp parallel for
             for(int y = 0; y < height; y++)
@@ -620,16 +506,12 @@ int main(int argc, char *argv[])
                     int ind = (height-1-y)*width+x;
                     float depth_val = depth_arrayf[ind];
 
-//                    if ( max_depth > 10 )
-//                        depth_val = depth_val / 1000.0f ;
-
                     depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*50.0f);
                 }
             }
 
             char depthImageFileName[300];
 
-//            if( try_next && render_pose_count < poses2render.size() )
             {
                 sprintf(depthImageFileName,"%s/scenedepth_00_%07d.png",data_dir.c_str(),render_pose_count/skip_frame);
             }
@@ -637,13 +519,6 @@ int main(int argc, char *argv[])
             std::string depthImageFileName_string(depthImageFileName);
 
             CVD::img_save(depth_image,depthImageFileName_string);
-
-//            char depthImageFileNameBinary[300];
-//            sprintf(depthImageFileNameBinary,"%s/scenedepth_00_%04d.bin",data_dir.c_str(),render_pose_count);
-//            /// Writing binary depth file
-//            ofstream out(depthImageFileNameBinary, ios::out | ios::binary );
-//            out.write((char*)&depth_arrayf, sizeof depth_arrayf);
-//            out.close();
 
             char poseFileName[300];
 
@@ -657,124 +532,37 @@ int main(int argc, char *argv[])
 
         }
 
-
-//        else
-//        {
-
-//            display_browsing_cam.ActivateScissorAndClear(browsing_cam);
-
-//            glEnable(GL_DEPTH_TEST);
-
-//            glClear(GL_COLOR_BUFFER_BIT);
-
-//            glColor3f(1.0f,1.0f,1.0f);
-
-//            float modelviewMatrix[16];
-//            glGetFloatv(GL_MODELVIEW_MATRIX, modelviewMatrix);
-
-//            std::cout<<"modelViewMatrix = " << std::endl;
-//            for(int c = 0; c < 4; c++)
-//            {
-//                for(int r = 0; r < 4; r++ )
-//                {
-//                    std::cout<<modelviewMatrix[r*4+c]<<" ";
-//                }
-//                std::cout<<std::endl;
-//            }
-
-
-//            /// Code to plot each of the objects in the mesh.
-//            for(int i = 0 ; i < shapes.size();i++)
-//            {
-//                glColor3f(colours(i,0),colours(i,1),colours(i,2));
-//                glEnableClientState(GL_VERTEX_ARRAY);
-
-//                glPushMatrix();
-
-//                glVertexPointer(3,GL_FLOAT,0,shape_vertices[i]);
-//                glDrawArrays(GL_TRIANGLES,0,shapes[i].mesh.indices.size());
-//                glDisableClientState(GL_VERTEX_ARRAY);
-
-//                glPopMatrix();
-
-//            }
-
-
-//            T_move  = TooN::SE3<>(TooN::SO3<>(TooN::makeVector((float)rx,(float)ry,(float)rz)),
-//                                  TooN::makeVector((float)tx,(float)ty,(float)tz));
-
-//            poses2render.at(0) = T_move;
-
-//            /// DrawCamera expanded at the end of main function
-//            povray_utils::DrawCamera(T_move,
-//                                     (float)end_pt,
-//                                     (float)line_width,
-//                                     do_inverse);
-
-
-//            static Var<int> max_grid_unit("ui.grid_max",10,0,100);
-//            float grid_max = (int)max_grid_unit;
-
-//            const float sizeL = 3.f;
-//            const float grid = 2.f;
-
-//            glPointSize(sizeL);
-//            glBegin(GL_LINES);
-//            glColor3f(.25,.25,.25);
-//            for(float i=-grid_max; i<=grid_max; i+=grid)
-//            {
-//                glVertex3f(-grid_max, i, 0.f);
-//                glVertex3f(grid_max, i, 0.f);
-
-//                glVertex3f(i, -grid_max, 0.f);
-//                glVertex3f(i, grid_max, 0.f);
-//            }
-//            glEnd();
-
-
-//        }
-
-//        for(int y = 0; y < height ; y++)
-//        {
-//            for(int x = 0; x < width; x++)
-//            {
-//                int ind = y*width+x;
-
-//                CVD::Rgb<CVD::byte>pixel = img_flipped[CVD::ImageRef(x,y)];
-
-//                h_image_rgb_data[ind] = make_float4((float)pixel.red/255.0f,
-//                                                    (float)pixel.green/255.0f,
-//                                                    (float)pixel.blue/255.0f,
-//                                                    1.0f);
-//            }
-//        }
-
-//        glDisable(GL_DEPTH_TEST);
-
-//        glClear(GL_COLOR_BUFFER_BIT);
-
-//        iu::copy(h_image_rgb,d_image_rgb);
-
-        {
-//            openglrendering::renderNormalisedFloat4ImageOnDevice(&image_viewer,
-//                                                                 d_image_rgb,
-//                                                                 *pbo_float4_0,
-//                                                                 *tex_show_char4_0);
-        }
-
-
         d_panel.Render();
         pangolin::FinishGlutFrame();
 
         render_pose_count+=skip_frame;
 
-
-//        if ( camera_moved )
-//        {
-//            camera_moved = false;
-//            render_glReadPixels =false;
-//        }
-
     }
 
 }
+
+
+//float projectionMatrix[16];
+//glGetFloatv(GL_PROJECTION_MATRIX, projectionMatrix);
+
+//for(int r = 0; r < 4; r++)
+//{
+//    for(int c = 0; c < 4; c++)
+//    {
+//        std::cout<<projectionMatrix[r*4+c]<<" ";
+//    }
+//    std::cout<<std::endl;
+//}
+
+
+//float modelviewMatrix[16];
+//glGetFloatv(GL_MODELVIEW_MATRIX, modelviewMatrix);
+//for(int c = 0; c < 4; c++)
+//{
+//    for(int r = 0; r < 4; r++ )
+//    {
+//        std::cout<<modelviewMatrix[r*4+c]<<" ";
+//    }
+//    std::cout<<std::endl;
+//}
+
