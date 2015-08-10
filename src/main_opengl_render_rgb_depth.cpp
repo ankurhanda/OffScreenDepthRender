@@ -172,7 +172,6 @@ void change_basis(TooN::SE3<>& T_wc_ref,
                                         T4x4(1,0),T4x4(1,1),T4x4(1,2),
                                         T4x4(2,0),T4x4(2,1),T4x4(2,2));
 
-
     TooN::Vector<3>t_slice = TooN::makeVector(T4x4(0,3),T4x4(1,3),T4x4(2,3));
 
     T_wc_ref = TooN::SE3<>(TooN::SO3<>(R_slice),t_slice);
@@ -431,6 +430,7 @@ int main(int argc, char *argv[])
                 }
             }
 
+            /// set the model view matrix to this pose
             s_cam.SetModelViewMatrix(openglSE3Matrix);
 
             s_cam.Apply();
@@ -462,7 +462,7 @@ int main(int argc, char *argv[])
             CVD::Image<CVD::Rgb<CVD::byte> > img = CVD::glReadPixels<CVD::Rgb<CVD::byte> >(CVD::ImageRef(640,480),
                                                                                            CVD::ImageRef(150,0));
 
-
+            /// save the image
 #pragma omp parallel for
             for(int yy = 0; yy < height; yy++ )
             {
@@ -480,6 +480,7 @@ int main(int argc, char *argv[])
 
             CVD::Image<CVD::byte>labelImage = CVD::Image<CVD::byte>(CVD::ImageRef(640,480));
 
+            /// save the annotations
 #pragma omp parallel for
             for(int yy = 0; yy < height; yy++ )
             {
@@ -500,6 +501,7 @@ int main(int argc, char *argv[])
 
             int scale = 5000;
 
+            /// convert to real-depth
 #pragma omp parallel for
             for(int i = 0; i < width*height; ++i)
             {
@@ -508,7 +510,8 @@ int main(int argc, char *argv[])
                 depth_arrayf[i] = 2.0 * near * far / (far + near - z_n * (far - near));
             }
 
-    #pragma omp parallel for
+            /// save the depth image
+#pragma omp parallel for
             for(int y = 0; y < height; y++)
             {
                 for(int x = 0; x < width; x++)
@@ -544,7 +547,8 @@ int main(int argc, char *argv[])
             float rand_g = (float)rand()/RAND_MAX;
             float rand_b = (float)rand()/RAND_MAX;
 
-            if( render_pose_count%20 == 0  )
+            /// write to obj the backprojected 3d points using the current camera pose
+            if( render_pose_count%1000 == 0  )
             {
 
                 float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
@@ -574,8 +578,8 @@ int main(int argc, char *argv[])
             }
 
 
-            if ( render_pose_count > 200 )
-                break;
+//            if ( render_pose_count > 1000 )
+//                break;
 
         }
 

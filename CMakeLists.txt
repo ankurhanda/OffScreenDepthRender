@@ -7,8 +7,6 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/CMakeModules/"
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -std=c++11 -std==gnu++11"-fext-numeric-literals")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -std=c++11 -std=gnu++11"-fext-numeric-literals")
 
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -O3")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 # Overide with cmake -DCMAKE_BUILD_TYPE=Debug {dir}
 IF( NOT CMAKE_BUILD_TYPE )
@@ -18,10 +16,6 @@ ENDIF()
 FIND_PACKAGE(GLEW REQUIRED)
 FIND_PACKAGE(Pangolin REQUIRED)
 FIND_PACKAGE(CVD REQUIRED)
-
-SET(
-  SOURCES
-)
 
 SET(TINYOBJLOADER_SOURCES
     ./src/utils/map_object_label2training_label.h
@@ -58,7 +52,6 @@ LINK_LIBRARIES(
   -lboost_filesystem
   -lboost_thread
 )
-
 
 IF(OPENMP_FOUND)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
