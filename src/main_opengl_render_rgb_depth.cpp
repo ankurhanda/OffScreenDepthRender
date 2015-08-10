@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
 
     /// This is the one I used for depth rendering....
     pangolin::OpenGlRenderState s_cam(
-      ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
+      ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,20),//1000),
       ModelViewLookAt(3,3,3, 0,0,0, AxisNegZ)
     );
 
@@ -541,6 +541,10 @@ int main(int argc, char *argv[])
 
             ofile.close();
 
+            float rand_r = (float)rand()/RAND_MAX;
+            float rand_g = (float)rand()/RAND_MAX;
+            float rand_b = (float)rand()/RAND_MAX;
+
             if( render_pose_count%20 == 0  )
             {
 
@@ -550,15 +554,23 @@ int main(int argc, char *argv[])
                     {
                         float depth = (float)depth_image[CVD::ImageRef(x,y)]/50.0f;
 
-                        TooN::Vector<4>p_w = T_wc * TooN::makeVector(depth*(x-u0)/fx,
-                                                                     depth*(y-v0)/fy,
-                                                                     depth,
-                                                                     1.0);
+                        if ( depth < 10 && depth != 0 )
+                        {
+                            TooN::Vector<4>p_w = T_wc * TooN::makeVector(depth*(x-u0)/fx,
+                                                                         depth*(y-v0)/fy,
+                                                                         depth,
+                                                                         1.0);
 
-                        model_file << "v " << p_w[0]<<" "<<p_w[1]<<" "<<p_w[2]<<std::endl;
+                            model_file << "v " << p_w[0]<<" "<<p_w[1]<<" "<<p_w[2]<<" "<<rand_r<<" "<<rand_g<<" "<<rand_b<<std::endl;
+
+                        }
                     }
                 }
             }
+
+
+            if ( render_pose_count > 200 )
+                break;
 
         }
 
