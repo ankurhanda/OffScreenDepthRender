@@ -164,7 +164,6 @@ void drawAxes(GLdouble length)
 
 
 void change_basis(TooN::SE3<>& T_wc_ref,
-//                  TooN::Cholesky<4>& Tchangebasis,
                   TooN::Matrix<4>&T)
 {
     TooN::Matrix<4>T4x4 = T.T() * T_wc_ref * T  ;
@@ -282,7 +281,7 @@ int main(int argc, char *argv[])
 
     /// This is the one I used for depth rendering....
     pangolin::OpenGlRenderState s_cam(
-      ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,20),//1000),
+      ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
       ModelViewLookAt(3,3,3, 0,0,0, AxisNegZ)
     );
 
@@ -389,6 +388,11 @@ int main(int argc, char *argv[])
     float fx = 420.0;
     float fy = 420.0;
 
+    TooN::Matrix<4>T = TooN::Data(-1,0,0,0,
+                                  0,-1,0,0,
+                                  0,0,1,0,
+                                  0,0,0,1);
+
     while(!pangolin::ShouldQuit())
     {
         static Var<int>numposes2plot("ui.numposes2plot",0,0,100);
@@ -404,13 +408,15 @@ int main(int argc, char *argv[])
             TooN::SE3<>T_cw = T_wc.inverse();
 
             TooN::SO3<>Rot = T_cw.get_rotation();
-            TooN::Matrix<3>SO3Mat = Rot.get_matrix();
-            TooN::Vector<3>trans = T_cw.get_translation();
 
             TooN::Matrix<4>SE3Mat = TooN::Identity(4);
 
+            /// copy rotation
+            TooN::Matrix<3>SO3Mat = Rot.get_matrix();            
             SE3Mat.slice(0,0,3,3) = SO3Mat;
 
+            /// copy translation
+            TooN::Vector<3>trans = T_cw.get_translation();
             SE3Mat(0,3) = trans[0];
             SE3Mat(1,3) = trans[1];
             SE3Mat(2,3) = trans[2];
@@ -492,6 +498,8 @@ int main(int argc, char *argv[])
 
             glReadPixels(150, 0, 640, 480, GL_DEPTH_COMPONENT, GL_FLOAT, depth_arrayf);
 
+            int scale = 5000;
+
 #pragma omp parallel for
             for(int i = 0; i < width*height; ++i)
             {
@@ -508,7 +516,7 @@ int main(int argc, char *argv[])
                     int ind = (height-1-y)*width+x;
                     float depth_val = depth_arrayf[ind];
 
-                    depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*50.0f);
+                    depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*scale);
                 }
             }
 
@@ -549,12 +557,12 @@ int main(int argc, char *argv[])
                 {
                     for(int x = 0; x < width; x++)
                     {
-                        float depth = (float)depth_image[CVD::ImageRef(x,y)]/50.0f;
+                        float depth = (float)depth_image[CVD::ImageRef(x,y)]/scale;
 
                         if ( depth < 10 && depth != 0 )
                         {
                             TooN::Vector<4>p_w = T_wc * TooN::makeVector(depth*(x-u0)/fx,
-                                                                         depth*(y-v0)/fy,
+                                                                         -depth*(y-v0)/fy,
                                                                          depth,
                                                                          1.0);
 
