@@ -401,8 +401,6 @@ int main(int argc, char *argv[])
 
             TooN::SE3<>T_wc = poses2render.at(render_pose_count);
 
-//            change_basis(T_wc,T);
-
             TooN::SE3<>T_cw = T_wc.inverse();
 
             TooN::SO3<>Rot = T_cw.get_rotation();
@@ -416,7 +414,6 @@ int main(int argc, char *argv[])
             SE3Mat(0,3) = trans[0];
             SE3Mat(1,3) = trans[1];
             SE3Mat(2,3) = trans[2];
-
 
             /// Ref: http://www.felixgers.de/teaching/jogl/generalTransfo.html
             /// It should be a transpose - stored in column major
@@ -503,12 +500,6 @@ int main(int argc, char *argv[])
                 depth_arrayf[i] = 2.0 * near * far / (far + near - z_n * (far - near));
             }
 
-//            float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
-//            float min_depth = *std::min_element(depth_arrayf,depth_arrayf+width*height);
-
-//            std::cout<<"max_depth = " << max_depth << std::endl;
-//            std::cout<<"min_depth = " << min_depth << std::endl;
-
     #pragma omp parallel for
             for(int y = 0; y < height; y++)
             {
@@ -547,6 +538,12 @@ int main(int argc, char *argv[])
 
             if( render_pose_count%20 == 0  )
             {
+
+                float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
+                float min_depth = *std::min_element(depth_arrayf,depth_arrayf+width*height);
+
+                std::cout<<"max_depth = " << max_depth << std::endl;
+                std::cout<<"min_depth = " << min_depth << std::endl;
 
                 for(int y = 0; y < height; y++)
                 {
