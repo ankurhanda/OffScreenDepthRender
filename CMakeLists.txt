@@ -63,3 +63,7 @@ ADD_EXECUTABLE(render_rgb_depth
 		${TINYOBJLOADER_SOURCES}
                ./src/main_opengl_render_rgb_depth.cpp)
 
+ADD_EXECUTABLE(automate_add_texture
+                ${TINYOBJLOADER_SOURCES}
+               ./src/main_automate_add_texture.cpp)
+

@@ -522,7 +522,7 @@ int main(int argc, char *argv[])
                     if( depth_val * scale < 65535 )
                         depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*scale);
                     else
-                        depth_image[CVD::ImageRef(x,y)] = 65535;
+                        depth_image[CVD::ImageRef(x,y)] = 65535 ;
                 }
             }
 
@@ -566,7 +566,7 @@ int main(int argc, char *argv[])
                     {
                         float depth = (float)depth_image[CVD::ImageRef(x,y)]/scale;
 
-                        if ( depth < 10 && depth != 0 )
+                        if ( depth < 10 && depth > 0 )
                         {
                             TooN::Vector<4>p_w = T_wc * TooN::makeVector(depth*(x-u0)/fx,
                                                                          -depth*(y-v0)/fy,
@@ -579,10 +579,6 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-
-
-//            if ( render_pose_count > 1000 )
-//                break;
 
         }
 
