@@ -140,10 +140,11 @@ std::string get_class_name(std::string& objectLabel)
 
     else if ( (objectLabel.find("cupboard") != std::string::npos ) ||
               (objectLabel.find("chest") != std::string::npos ) ||
-              (objectLabel.find("drawers") != std::string::npos ) ||
+              (objectLabel.find("drawer") != std::string::npos ) ||
               (objectLabel.find("furniture") != std::string::npos ) ||
               (objectLabel.find("bench") != std::string::npos ) ||
-              (objectLabel.find("wardrobe") != std::string::npos ))
+              (objectLabel.find("wardrobe") != std::string::npos ) ||
+              (objectLabel.find("desk") != std::string::npos ))
         return "FURNITURE";
 
     else if ( (objectLabel.find("nightstand") != std::string::npos ) ||
@@ -165,10 +166,11 @@ std::string get_class_name(std::string& objectLabel)
 
     else if ( (objectLabel.find("pillow") != std::string::npos ) ||
               (objectLabel.find("cushion") != std::string::npos ) )
-        return "PILLOWS";
+        return "PILLOW";
 
-//    else if ( (objectLabel.find("book") != std::string::npos )  )
-//        return "BOOKS";
+    else if ( (objectLabel.find("tv") != std::string::npos ) ||
+              (objectLabel.find("computer") != std::string::npos ) )
+        return "TV";
 
     else if ( (objectLabel.find("door") != std::string::npos )  )
         return "DOOR";
@@ -184,6 +186,28 @@ std::string get_class_name(std::string& objectLabel)
 
     else if ( (objectLabel.find("lamp") != std::string::npos ) )
         return "LAMP";
+
+    else if ( (objectLabel.find("book") != std::string::npos ) )
+        return "BOOK";
+
+    else if ( (objectLabel.find("vase") != std::string::npos )
+              || (objectLabel.find("urn") != std::string::npos )
+              || (objectLabel.find("bowl") != std::string::npos )
+              || (objectLabel.find("carafe") != std::string::npos ) )
+        return "VASE";
+
+    else if ( (objectLabel.find("plant") != std::string::npos ) )
+        return "PLANT";
+
+    else if ( (objectLabel.find("projector") != std::string::npos ) ||
+              (objectLabel.find("monitor") != std::string::npos ))
+        return "PROJECTOR";
+
+    else if ( (objectLabel.find("shield") != std::string::npos ) )
+        return "SHIELD";
+
+    else if ( (objectLabel.find("keyboard") != std::string::npos ) )
+        return "KEYBOARD";
 
     else
         return "UNKNOWN";
