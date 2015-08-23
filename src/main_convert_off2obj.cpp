@@ -7,100 +7,114 @@ using namespace std;
 
 int main(void)
 {
-    std::string object = "desk";
+    std::vector<std::string> objects;
+//    objects.push_back("desk");
+//    objects.push_back("chair");
+    objects.push_back("table");
+    objects.push_back("night_stand");
+    objects.push_back("sofa");
+    objects.push_back("bed");
 
-    for(int i = 1; i <= 889; i++ )
+    int n_objects_max = 1000;
+
+    for (int o=0; o<objects.size(); ++o)
     {
-        char filename[400];
-
-        sprintf(filename,"/home/ankur/workspace/code/ModelNet/ModelNet10/%s/train/%s_%04d.off",object.c_str(),
-                object.c_str(),i);
-
-        std::string fileName(filename);
-
-        ifstream ifile(fileName.c_str());
-
-        if ( !boost::filesystem::exists( fileName) )
+        char objdirname[400];
+        sprintf (objdirname,"/media/viorik/Work/ModelNet/ModelNet10/%s/trainOBJ/",objects[o].c_str());
+        char command[400];
+        sprintf(command,"mkdir %s",objdirname);
+        system(command);
+        for(int i = 1; i <= n_objects_max; i++ )
         {
-            std::cerr<<"File: "<< fileName << " does not exist" << std::endl;
+            char pathfile[400];
 
-            ifile.close();
+            sprintf(pathfile,"/media/viorik/Work/ModelNet/ModelNet10/%s/train/%s_%04d.off",objects[o].c_str(),objects[o].c_str(),i);
 
-            exit(1);
-        }
+            //std::string pathFile(pathfile);
 
-        char readlinedata[300];
+            ifstream ifile(pathfile);
 
-        ifile.getline(readlinedata,200);
+            if ( !boost::filesystem::exists( pathfile) )
+            {
+                std::cerr<<"File: "<< pathfile << " does not exist" << std::endl;
 
-        istringstream iss(readlinedata);
+                ifile.close();
 
-        std::string str_off;
+                break;//exit(1);
+            }
 
-        iss >> str_off;
+            char readlinedata[300];
 
-        int numVertices, numFaces, numEdges;
+            ifile.getline(readlinedata,200);
 
-        ifile.getline(readlinedata,200);
+            istringstream iss(readlinedata);
 
-        istringstream vss(readlinedata);
+            std::string str_off;
 
-        vss >> numVertices;
+            iss >> str_off;
 
-        vss >> numFaces;
+            int numVertices, numFaces, numEdges;
 
-        vss >> numEdges;
-
-        std::cout<<str_off<<" "<<numVertices<<" "<<numFaces<<" "<<numEdges<<std::endl;
-
-        sprintf(filename,"/home/ankur/workspace/code/ModelNet/ModelNet10/%s/train/%s_%04d.obj",object.c_str(),
-                object.c_str(),i);
-
-        ofstream ofile(filename);
-
-        std::cout<<filename<<std::endl;
-
-        int count = 0;
-
-        while(1)
-        {
-            if(ifile.eof() )
-                break;
-
-            ifile.getline(readlinedata,300);
+            ifile.getline(readlinedata,200);
 
             istringstream vss(readlinedata);
 
-            if ( count < numVertices )
+            vss >> numVertices;
+
+            vss >> numFaces;
+
+            vss >> numEdges;
+
+            std::cout<<str_off<<" "<<numVertices<<" "<<numFaces<<" "<<numEdges<<std::endl;
+
+            sprintf(pathfile,"/media/viorik/Work/ModelNet/ModelNet10/%s/trainOBJ/%s_%04d.obj",objects[o].c_str(),objects[o].c_str(),i);
+
+            ofstream ofile(pathfile);
+
+            std::cout<<pathfile<<std::endl;
+
+            int count = 0;
+
+            while(1)
             {
-                float x,y,z;
+                if(ifile.eof() )
+                    break;
 
-                vss >> x; vss >> y; vss >> z;
+                ifile.getline(readlinedata,300);
 
-                ofile<<"v "<< x <<" "<<y <<" "<<z << std::endl;
+                istringstream vss(readlinedata);
+
+                if ( count < numVertices )
+                {
+                    float x,y,z;
+
+                    vss >> x; vss >> y; vss >> z;
+
+                    ofile<<"v "<< x <<" "<<y <<" "<<z << std::endl;
+                }
+
+                if ( count >= numVertices && count-numVertices < numFaces )
+                {
+                    int points, v1, v2, v3;
+
+                    vss >> points;
+
+                    vss >> v1;
+
+                    vss >> v2;
+
+                    vss >> v3;
+
+                    ofile <<"f "<<v1+1<<" "<<v2+1<<" "<<v3+1<<std::endl;
+                }
+
+                count++;
             }
 
-            if ( count >= numVertices && count-numVertices < numFaces )
-            {
-                int points, v1, v2, v3;
+            ofile.close();
 
-                vss >> points;
+            ifile.close();
 
-                vss >> v1;
-
-                vss >> v2;
-
-                vss >> v3;
-
-                ofile <<"f "<<v1+1<<" "<<v2+1<<" "<<v3+1<<std::endl;
-            }
-
-            count++;
         }
-
-        ofile.close();
-
-        ifile.close();
-
     }
 }

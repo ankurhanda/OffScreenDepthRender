@@ -411,7 +411,7 @@ int main(int argc, char *argv[])
             TooN::Matrix<4>SE3Mat = TooN::Identity(4);
 
             /// copy rotation
-            TooN::Matrix<3>SO3Mat = Rot.get_matrix();            
+            TooN::Matrix<3>SO3Mat = Rot.get_matrix();
             SE3Mat.slice(0,0,3,3) = SO3Mat;
 
             /// copy translation
@@ -617,4 +617,3 @@ int main(int argc, char *argv[])
 //    }
 //    std::cout<<std::endl;
 //}
-
