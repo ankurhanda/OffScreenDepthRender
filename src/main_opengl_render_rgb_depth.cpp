@@ -2,15 +2,17 @@
 #include <opencv2/opencv.hpp>
 #include <boost/filesystem.hpp>
 
-#include<TooN/TooN.h>
+#include <TooN/TooN.h>
 #include <TooN/se3.h>
 
 #include <pangolin/pangolin.h>
 #include <pangolin/display.h>
+#include <pangolin/glcuda.h>
 #include <cvd/image_io.h>
 
 #include <cvd/gl_helpers.h>
 
+#include "src/utils/povray_utils.h"
 #include "src/tinyobjloader/tiny_obj_loader.h"
 #include "utils/map_object_label2training_label.h"
 
@@ -197,7 +199,14 @@ int main(int argc, char *argv[])
 
     obj_basename = obj_basename.substr(find_slash+1,find_dot-find_slash-1);
 
-    std::string data_dir = "../data/" + obj_basename + "_data";
+    std::string data_dir = "../data/";// + obj_basename + "_data";
+
+    char trajectory_fileName[300];
+
+    sprintf(trajectory_fileName,"../data/poses/%s_bounding_sphere_poses.txt",
+            obj_basename.c_str());
+
+    std::cout<<"Poses filename "<<trajectory_fileName<<std::endl;
 
     /// Simple OBJ reader - main code begins after this..
 
@@ -277,12 +286,23 @@ int main(int argc, char *argv[])
             .SetBounds(1.0, 0.0, 0, pangolin::Attach::Pix(150));
 
 
-
     /// This is the one I used for depth rendering....
     pangolin::OpenGlRenderState s_cam(
       ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
-      ModelViewLookAt(3,3,3, 0,0,0, AxisNegZ)
+      ModelViewLookAt(3,3,3, 0,0,0,AxisNegZ)
     );
+
+    TooN::Matrix<4>T = TooN::Data(1,0,0,0,
+                                  0,1,0,0,
+                                  0,0,1,0,
+                                  0,0,0,1);
+
+
+    //    ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
+        float u0 = 320.0;
+        float v0 = 240.0;
+        float fx = 420.0;
+        float fy = -420.0;
 
 
 
@@ -291,7 +311,7 @@ int main(int argc, char *argv[])
       .SetBounds(0.0, 1, Attach::Pix(UI_WIDTH), 1, -640.0f/480.0f)
       .SetHandler(new Handler3D(s_cam));
 
-    std::cout<<"entering the while loop" << std::endl;
+    //std::cout<<"entering the while loop" << std::endl;
 
     OpenGlMatrix openglSE3Matrix;
 
@@ -350,12 +370,6 @@ int main(int argc, char *argv[])
 
     CVD::Image<CVD::Rgb<CVD::byte> > img_flipped(CVD::ImageRef(640,480));
 
-    char trajectory_fileName[300];
-
-    sprintf(trajectory_fileName,"%s/%s_trajectory_random_poses_SE3_3x4.txt",
-            data_dir.c_str(),
-            obj_basename.c_str());
-
     ifstream SE3PoseFile(trajectory_fileName);
 
 
@@ -377,26 +391,160 @@ int main(int argc, char *argv[])
     }
     SE3PoseFile.close();
 
+    std::cout<<"Poses to render "<<poses2render.size()<<std::endl;
+
     int skip_frame = 1;
 
     ofstream model_file("3dmodel.obj");
 
-//    ProjectionMatrixRDF_BottomLeft(640,480,420.0,420.0,320,240,0.1,1000),
-    float u0 = 320.0;
-    float v0 = 240.0;
-    float fx = 420.0;
-    float fy = 420.0;
-
-    TooN::Matrix<4>T = TooN::Data(-1,0,0,0,
-                                  0,-1,0,0,
-                                  0,0,1,0,
-                                  0,0,0,1);
-
     while(!pangolin::ShouldQuit())
     {
         static Var<int>numposes2plot("ui.numposes2plot",0,0,100);
+        static Var<bool>camera_plot("ui.camera_plot",false);
+        static Var<float> end_pt("ui.end_pt",0.1,0,10);
+        static Var<float> line_width("ui.line_width",2,0,100);
+        static Var<bool> do_inverse("ui.do_inverse",false);
+        static Var<bool>write_poses("ui.write_poses",true);
 
+        static Var<int>n_levels("ui.n_levels",2,1,20);
+        static Var<int>l_levels("ui.l_levels",2,1,20);
+
+        static Var<float>sphere_radius("ui.sphere_radius",0.5,0.1,30);
+
+        static Var<bool>write_poses_file("ui.write_poses_file",false);
+
+        if (camera_plot)
         {
+            poses2render.clear();
+
+            //        int n_levels = 10;
+            //        int l_levels = 10;
+            float rx = 0, ry = 0, rz = 0;
+            float tx = 0, ty = 0, tz = 0;
+//            for(int i = (int)n_levels; i >=(int)((int)n_levels-(int)l_levels) ; i--)
+//            {
+//                float theta = (i * M_PI) / ( (int)n_levels * 1.0f) ;
+
+//                for(int j = 0; j < 4*i; j++)
+//                {
+//                    float phi = ( (1/2.0f) * j* (float)M_PI) / i ; /// [0, 2 * M_PI]
+
+            for (int i=0; i<=n_levels; ++i)
+            {
+                float theta = (i * M_PI) / ( (int)n_levels * 1.0f) ;
+
+                for (int j=0; j<=l_levels; ++j)
+                {
+                    float phi = (j * 2*M_PI) / ( (int)l_levels * 1.0f) ;
+
+                    float3 point = make_float3(sphere_radius*sin(theta)*cos(phi),
+                                               sphere_radius*sin(theta)*sin(phi),
+                                               sphere_radius*cos(theta));
+
+                    //  sphere_points.push_back(point);
+
+                    TooN::Matrix<3>RotMat = TooN::Zeros(3);
+
+                    /// http://www.iac.ethz.ch/edu/courses/bachelor/veranstaltungen/environmental_fluid_dynamics/AD3
+                    /// Page 4!
+
+                    TooN::Vector<3>zAxis =  -1.0f* TooN::makeVector(point.x,point.y,point.z)/(float)sphere_radius;
+                    TooN::Vector<3>xAxis =  -1.0f* TooN::makeVector(-sin(phi),cos(phi),0);
+                    TooN::Vector<3>yAxis =  zAxis ^ xAxis;
+
+                    RotMat.T()[0] = xAxis;
+                    RotMat.T()[1] = yAxis;
+                    RotMat.T()[2] = zAxis;
+
+                    TooN::SO3<>RMat(RotMat);
+
+                    TooN::SE3<>T_ = TooN::SE3<>(RMat,TooN::makeVector(point.x,
+                                                                      point.y,
+                                                                      point.z));
+
+                    TooN::SE3<>T_rot = TooN::SE3<>(TooN::SO3<>(TooN::makeVector((float)rx,(float)ry,(float)rz)),
+                                                   TooN::makeVector((float)tx,(float)ty,(float)tz));
+
+                    TooN::SE3<>T_plot = T_rot * T_;
+
+                    poses2render.push_back(T_plot);
+                }
+
+            }
+
+
+
+            /// DrawCamera expanded at the end of main function
+
+            d_cam.ActivateScissorAndClear(s_cam);
+
+            glEnable(GL_DEPTH_TEST);
+
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glColor3f(1.0f,1.0f,1.0f);
+
+            for(int i = 0 ; i < shapes.size();i++)
+            {
+                int training_label = obj_label2training_label(shapes[i].name);
+
+                glColor3f(colours(training_label,0),colours(training_label,1),colours(training_label,2));
+
+                glEnableClientState(GL_VERTEX_ARRAY);
+
+                glVertexPointer(3,GL_FLOAT,0,shape_vertices[i]);
+                glDrawArrays(GL_TRIANGLES,0,shapes[i].mesh.indices.size());
+                glDisableClientState(GL_VERTEX_ARRAY);
+
+            }
+
+            for(int i =0 ; i < (int)poses2render.size(); i++)
+            {
+                TooN::SE3<>T_plot = poses2render.at(i);
+
+                povray_utils::DrawCamera(T_plot,
+                                         (float)end_pt,
+                                         (float)line_width,
+                                         do_inverse);
+            }
+
+
+
+
+
+        }
+
+//        else if (write_poses_file)
+//        {
+//            camera_plot = false;
+//            write_poses_file = false;
+
+//            char trajectory_fileName[200];
+
+//        //    sprintf(trajectory_fileName,"%s/%s_trajectory_random_poses_SE3_3x4.txt",
+//        //            data_dir.c_str(),
+//        //            obj_basename.c_str());
+
+//            sprintf(trajectory_fileName,"../data/poses/%s_bounding_sphere_poses.txt",obj_basename.c_str());
+
+//            std::cout<<"trajectory_fileName = " << trajectory_fileName << std::endl;
+
+//            std::ofstream ofile;
+//            ofile.open(trajectory_fileName);
+
+//            for(int i = 0 ;i < poses2render.size(); i++)
+//                ofile << poses2render.at(i) << std::endl;
+
+//            ofile.close();
+
+//        }
+
+        else if ( write_poses )
+        {
+            //write_poses = false;
+
+            camera_plot = false;
+
             numposes2plot  = render_pose_count;
 
             if ( numposes2plot >= poses2render.size())
@@ -411,7 +559,7 @@ int main(int argc, char *argv[])
             TooN::Matrix<4>SE3Mat = TooN::Identity(4);
 
             /// copy rotation
-            TooN::Matrix<3>SO3Mat = Rot.get_matrix();
+            TooN::Matrix<3>SO3Mat = Rot.get_matrix();            
             SE3Mat.slice(0,0,3,3) = SO3Mat;
 
             /// copy translation
@@ -499,7 +647,7 @@ int main(int argc, char *argv[])
 
             glReadPixels(150, 0, 640, 480, GL_DEPTH_COMPONENT, GL_FLOAT, depth_arrayf);
 
-            int scale = 5000;
+            int scale = 500;
 
             /// convert to real-depth
 #pragma omp parallel for
@@ -518,6 +666,8 @@ int main(int argc, char *argv[])
                 {
                     int ind = (height-1-y)*width+x;
                     float depth_val = depth_arrayf[ind];
+
+//                    std::cout<<"depth_val " << depth_val << std::endl;
 
                     if( depth_val * scale < 65535 )
                         depth_image[CVD::ImageRef(x,y)] = (u_int16_t)(depth_val*scale);
@@ -551,7 +701,7 @@ int main(int argc, char *argv[])
             float rand_b = (float)rand()/RAND_MAX;
 
             /// write to obj the backprojected 3d points using the current camera pose
-            if( render_pose_count%1000 == 0  )
+            if( render_pose_count%2 == 0  )
             {
 
                 float max_depth = *std::max_element(depth_arrayf,depth_arrayf+width*height);
@@ -566,10 +716,13 @@ int main(int argc, char *argv[])
                     {
                         float depth = (float)depth_image[CVD::ImageRef(x,y)]/scale;
 
-                        if ( depth < 10 && depth > 0 )
+                        if ( depth < 100 && depth > 0 ) // && depth_image[CVD::ImageRef(x,y)] != 65535 )
                         {
+
+                            change_basis(T_wc,T);
+
                             TooN::Vector<4>p_w = T_wc * TooN::makeVector(depth*(x-u0)/fx,
-                                                                         -depth*(y-v0)/fy,
+                                                                         depth*(y-v0)/fy,
                                                                          depth,
                                                                          1.0);
 
@@ -617,3 +770,4 @@ int main(int argc, char *argv[])
 //    }
 //    std::cout<<std::endl;
 //}
+
